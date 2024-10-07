@@ -28,13 +28,15 @@ class _TestMeState extends State<TestMe> {
     // Fetch comments from Firebase
     QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('Comments').orderBy('date', descending: true).get();
     setState(() {
-      filedata = snapshot.docs.map((doc) => {
-        'id': doc.id,
-        'name': doc['name'],
-        'pic': doc['pic'],
-        'message': doc['message'],
-        'date': doc['date'],
-      }).toList();
+      filedata = snapshot.docs
+          .map((doc) => {
+                'id': doc.id,
+                'name': doc['name'],
+                'pic': doc['pic'],
+                'message': doc['message'],
+                'date': doc['date'],
+              })
+          .toList();
     });
   }
 
@@ -236,7 +238,10 @@ class _TestMeState extends State<TestMe> {
       ),
       body: Container(
         child: CommentBox(
-          userImage: CommentBox.commentImageParser(imageURLorPath: "assets/img/userpic.jpg"),
+          // userImage: CommentBox.commentImageParser(imageURLorPath: "assets/img/userpic.jpg"),
+          userImage: CommentBox.commentImageParser(
+            imageURLorPath: "lib/assets/user.png", // Path to the user image // Use a placeholder image for now
+          ),
           child: commentChild(filedata),
           labelText: 'Write a comment...',
           errorText: 'Comment cannot be blank',
