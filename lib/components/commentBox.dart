@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:comment_box/comment/comment.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 
@@ -9,33 +11,82 @@ class TestMe extends StatefulWidget {
 
 class _TestMeState extends State<TestMe> {
   final formKey = GlobalKey<FormState>();
-  final TextEditingController commentController = TextEditingController();
-  List filedata = [
-    {
-      'name': 'Chamal Lakshan', 
-      'pic': 'https://randomuser.me/api/portraits/men/1.jpg',
-      'message': 'I love to learn those',
-      'date': '2021-01-01 12:00:00'
-    },
-    {
-      'name': 'Nuwan Malinda',
-      'pic': 'https://randomuser.me/api/portraits/men/2.jpg',
-      'message': 'Very cool Teachers',
-      'date': '2021-01-01 12:00:00'
-    },
-    {
-      'name': 'John Martins',
-      'pic': 'https://randomuser.me/api/portraits/men/3.jpg',
-      'message': 'Very cool',
-      'date': '2021-01-01 12:00:00'
-    },
-    {
-      'name': 'Kamal Perera',
-      'pic': 'https://randomuser.me/api/portraits/men/4.jpg',
-      'message': 'Very cool',
-      'date': '2021-01-01 12:00:00'
-    },
-  ];
+  final TextEditingController commentController = TextEditingController(); // For new comments
+  final TextEditingController editCommentController = TextEditingController(); // For editing comments
+  String? selectedCommentId; // Holds the ID of the comment being edited
+
+  @override
+  void initState() {
+    super.initState();
+    Firebase.initializeApp(); // Initialize Firebase
+    fetchComments(); // Fetch comments on page load
+  }
+
+  List filedata = [];
+
+  Future<void> fetchComments() async {
+    // Fetch comments from Firebase
+    QuerySnapshot snapshot = await FirebaseFirestore.instance.collection('Comments').orderBy('date', descending: true).get();
+    setState(() {
+      filedata = snapshot.docs.map((doc) => {
+        'id': doc.id,
+        'name': doc['name'],
+        'pic': doc['pic'],
+        'message': doc['message'],
+        'date': doc['date'],
+      }).toList();
+    });
+  }
+
+  // This method provides the background when swiping left (for delete)
+  Widget slideLeftBackground() {
+    return Container(
+      color: Colors.red,
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: <Widget>[
+            SizedBox(width: 20),
+            Icon(Icons.delete, color: Colors.white),
+            Text(
+              "Delete",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.left,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // This method provides the background when swiping right (for edit)
+  Widget slideRightBackground() {
+    return Container(
+      color: Colors.blue,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: <Widget>[
+            Icon(Icons.edit, color: Colors.white),
+            Text(
+              " Edit",
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+              ),
+              textAlign: TextAlign.right,
+            ),
+            SizedBox(width: 20),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget commentChild(data) {
     return ListView.builder(
@@ -43,11 +94,11 @@ class _TestMeState extends State<TestMe> {
       itemBuilder: (context, index) {
         return Dismissible(
           key: UniqueKey(),
-          background: slideLeftBackground(), // Left swipe
-          secondaryBackground: slideRightBackground(), // Right swipe
+          background: slideLeftBackground(), // Swipe left to delete
+          secondaryBackground: slideRightBackground(), // Swipe right to edit
           confirmDismiss: (direction) async {
             if (direction == DismissDirection.startToEnd) {
-              // Swipe Right to delete
+              // Swipe Left to delete
               return await showDialog(
                 context: context,
                 builder: (BuildContext context) {
@@ -61,9 +112,7 @@ class _TestMeState extends State<TestMe> {
                       ),
                       TextButton(
                         onPressed: () {
-                          setState(() {
-                            filedata.removeAt(index);
-                          });
+                          deleteComment(data[index]['id']);
                           Navigator.of(context).pop(true);
                         },
                         child: Text("Delete"),
@@ -73,15 +122,16 @@ class _TestMeState extends State<TestMe> {
                 },
               );
             } else {
-              // Swipe Left to edit
-              commentController.text = data[index]['message'];
+              // Swipe Right to edit
+              editCommentController.text = data[index]['message']; // Set the message in the edit controller
+              selectedCommentId = data[index]['id']; // Store the comment ID for editing
               await showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
                     title: Text("Edit Comment"),
                     content: TextFormField(
-                      controller: commentController,
+                      controller: editCommentController, // Use the edit controller here
                       decoration: InputDecoration(hintText: "Edit your comment"),
                     ),
                     actions: <Widget>[
@@ -91,10 +141,7 @@ class _TestMeState extends State<TestMe> {
                       ),
                       TextButton(
                         onPressed: () {
-                          setState(() {
-                            filedata[index]['message'] = commentController.text;
-                          });
-                          commentController.clear();
+                          editComment(selectedCommentId!, editCommentController.text);
                           Navigator.of(context).pop();
                         },
                         child: Text("Save"),
@@ -111,7 +158,6 @@ class _TestMeState extends State<TestMe> {
             child: ListTile(
               leading: GestureDetector(
                 onTap: () async {
-                  // Display the image in large form.
                   print("Comment Clicked");
                 },
                 child: Container(
@@ -140,52 +186,45 @@ class _TestMeState extends State<TestMe> {
     );
   }
 
-  Widget slideLeftBackground() {
-    return Container(
-      color: Colors.red,
-      child: Align(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            SizedBox(width: 20),
-            Icon(Icons.delete, color: Colors.white),
-            Text(
-              "Delete",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.left,
-            ),
-          ],
-        ),
-        alignment: Alignment.centerLeft,
-      ),
-    );
+  Future<void> postComment() async {
+    if (formKey.currentState!.validate()) {
+      // Get the current date and time
+      var now = DateTime.now();
+      var formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+
+      // Add the new comment to Firebase
+      await FirebaseFirestore.instance.collection('Comments').add({
+        'name': 'Madhawa Awishka', // Hardcoded name
+        'pic': 'https://randomuser.me/api/portraits/men/${filedata.length % 100}.jpg', // Placeholder image
+        'message': commentController.text,
+        'date': formattedDate,
+      });
+
+      // Fetch the updated comments after posting
+      fetchComments();
+
+      commentController.clear(); // Clear the new comment controller
+      FocusScope.of(context).unfocus();
+    }
   }
 
-  Widget slideRightBackground() {
-    return Container(
-      color: Colors.blue,
-      child: Align(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: <Widget>[
-            Icon(Icons.edit, color: Colors.white),
-            Text(
-              " Edit",
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-              ),
-              textAlign: TextAlign.right,
-            ),
-            SizedBox(width: 20),
-          ],
-        ),
-        alignment: Alignment.centerRight,
-      ),
-    );
+  Future<void> deleteComment(String commentId) async {
+    // Delete the comment from Firebase
+    await FirebaseFirestore.instance.collection('Comments').doc(commentId).delete();
+
+    // Fetch the updated comments after deletion
+    fetchComments();
+  }
+
+  Future<void> editComment(String commentId, String newMessage) async {
+    // Edit the comment in Firebase
+    await FirebaseFirestore.instance.collection('Comments').doc(commentId).update({
+      'message': newMessage,
+      'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()), // Update timestamp
+    });
+
+    // Fetch the updated comments after editing
+    fetchComments();
   }
 
   @override
@@ -202,28 +241,9 @@ class _TestMeState extends State<TestMe> {
           labelText: 'Write a comment...',
           errorText: 'Comment cannot be blank',
           withBorder: false,
-          sendButtonMethod: () {
-            if (formKey.currentState!.validate()) {
-              print(commentController.text);
-              setState(() {
-                var now = DateTime.now();
-                var formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now); // Format date
-                var value = {
-                  'name': 'Madhawa Awishka',
-                  'pic': 'https://randomuser.me/api/portraits/men/${filedata.length % 100}.jpg',
-                  'message': commentController.text,
-                  'date': formattedDate, // Store the current date and time
-                };
-                filedata.insert(0, value);
-              });
-              commentController.clear();
-              FocusScope.of(context).unfocus();
-            } else {
-              print("Not validated");
-            }
-          },
+          sendButtonMethod: postComment, // Send comment to Firebase
           formKey: formKey,
-          commentController: commentController,
+          commentController: commentController, // Use for new comment
           backgroundColor: Colors.pink,
           textColor: Colors.white,
           sendWidget: Icon(Icons.send_sharp, size: 30, color: Colors.white),
