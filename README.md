@@ -1,6 +1,6 @@
 # community
 
-A new Flutter project.gffgfg
+A new Flutter project.
 
 ## Getting Started
 
