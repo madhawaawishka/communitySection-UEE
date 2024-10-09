@@ -118,7 +118,7 @@ class _CommunityPageState extends State<CommunityPage> {
                                 editPost(context, postId, postMessage);
                                 return false; // Prevent dismissal after editing
                               } else {
-                                Fluttertoast.showToast(msg: "You can only edit your own posts.");
+                                Fluttertoast.showToast(msg: "You cannot edit someone else's post.");
                                 return false; // Do not dismiss if not post owner
                               }
                             } else if (direction == DismissDirection.endToStart) {
