@@ -10,10 +10,10 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Home Page', style: TextStyle(fontFamily: 'Montserrat',fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: const Color.fromARGB(255, 236, 235, 237),
         centerTitle: true,
         elevation: 4.0,
-        shadowColor: Colors.deepPurpleAccent,
+        shadowColor: const Color.fromARGB(255, 0, 0, 0),
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
