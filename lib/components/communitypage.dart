@@ -1,7 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:community/components/wall_posts.dart';
 import 'package:community/helper/helper_method.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'new_post.dart'; // Import the new post page
 
 class CommunityPage extends StatefulWidget {
   const CommunityPage({super.key});
@@ -11,34 +12,31 @@ class CommunityPage extends StatefulWidget {
 }
 
 class _CommunityPageState extends State<CommunityPage> {
-  final textController = TextEditingController();
-  final String currentUserEmail = "madhawaawishka@gmail.com"; // Hardcoded current user
-
-  void postMessage() {
-    if (textController.text.isNotEmpty) {
-      FirebaseFirestore.instance.collection("User Posts").add({
-        'User email': currentUserEmail, // Use hardcoded user
-        'Message': textController.text,
-        'TimeStamps': Timestamp.now(),
-        'Likes': [],
-      });
-      textController.clear(); // Clear the input field after posting
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Explore Communites",
+          "Explore Communities",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
-          ), // Set the text color to white
+          ), // Set the text color to black
         ),
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         centerTitle: true, // Center the title
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add_circle, color: Colors.black), // Plus icon in black color
+            onPressed: () {
+              // Navigate to new_post.dart
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const NewPostPage()),
+              );
+            },
+          ),
+        ],
       ),
       backgroundColor: Colors.grey[200], // Change this color to any you like
       body: Center(
@@ -46,7 +44,10 @@ class _CommunityPageState extends State<CommunityPage> {
           children: [
             Expanded(
               child: StreamBuilder(
-                stream: FirebaseFirestore.instance.collection("User Posts").orderBy("TimeStamps", descending: false).snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection("User Posts")
+                    .orderBy("TimeStamps", descending: false)
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     return ListView.builder(
@@ -73,27 +74,7 @@ class _CommunityPageState extends State<CommunityPage> {
                 },
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.all(25.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: textController,
-                      decoration: const InputDecoration(
-                        hintText: "Enter your message",
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: postMessage,
-                    icon: const Icon(Icons.send),
-                  ),
-                ],
-              ),
-            ),
-            Text("Logged in as " + currentUserEmail!, style: TextStyle(color: const Color.fromARGB(255, 0, 0, 0))), // Display hardcoded user email
+            // Remove the message input section here
           ],
         ),
       ),
