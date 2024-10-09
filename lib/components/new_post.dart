@@ -29,7 +29,7 @@ class _NewPostPageState extends State<NewPostPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Create New Post",style: TextStyle(color: Colors.black,
+        title: const Text("Create New Posts",style: TextStyle(color: Colors.black,
             fontWeight: FontWeight.bold,)),
         backgroundColor: const Color.fromARGB(255, 255, 255, 255),
         centerTitle: true,
