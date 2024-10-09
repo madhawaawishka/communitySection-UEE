@@ -9,9 +9,11 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Home Page'),
+        title: Text('Home Page', style: TextStyle(fontFamily: 'Montserrat')),
         backgroundColor: Colors.deepPurple,
         centerTitle: true,
+        elevation: 4.0,
+        shadowColor: Colors.deepPurpleAccent,
       ),
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -21,53 +23,61 @@ class HomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               // Community Posts Button
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => CommunityPage()),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: const Color.fromARGB(255, 133, 119, 172),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
+                icon: Icon(Icons.forum, color: Colors.black),
+                label: Text(
                   'Community Posts',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
+                    fontFamily: 'Montserrat',
                   ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 8,
+                  shadowColor: Colors.deepPurple,
+                  backgroundColor: const Color.fromARGB(255, 133, 119, 172),
                 ),
               ),
               SizedBox(height: 20),
 
               // Feedbacks Button
-              ElevatedButton(
+              ElevatedButton.icon(
                 onPressed: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => TestMe()),
                   );
                 },
-                style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: const Color.fromARGB(255, 194, 159, 172),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                child: Text(
+                icon: Icon(Icons.feedback, color: Colors.black),
+                label: Text(
                   'Feedbacks',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: Colors.black,
+                    fontFamily: 'Montserrat',
                   ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.symmetric(vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 8,
+                  shadowColor: Colors.pinkAccent,
+                  backgroundColor: const Color.fromARGB(255, 194, 159, 172),
                 ),
               ),
             ],
@@ -84,6 +94,7 @@ void main() {
     theme: ThemeData(
       primaryColor: Colors.deepPurple,
       scaffoldBackgroundColor: Colors.grey[100],
+      fontFamily: 'Montserrat',
     ),
   ));
 }
