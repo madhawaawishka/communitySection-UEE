@@ -85,7 +85,7 @@ void deletePost(String postId) async {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Explore Communitiesxxsdsdsddsdsddsdsxx",
+          "Explore Communitiesxxsdsdsdsxx",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
