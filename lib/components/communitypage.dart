@@ -1,5 +1,6 @@
 import 'package:community/components/wall_posts.dart';
 import 'package:community/helper/helper_method.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fluttertoast/fluttertoast.dart'; // Import fluttertoast package for showing toast messages
@@ -16,10 +17,34 @@ class _CommunityPageState extends State<CommunityPage> {
   final String currentUserEmail = "madhawaawishka@gmail.com"; // Hardcoded user email
 
   // Function to delete a post
-  void deletePost(String postId) {
-    FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
+void deletePost(String postId) async {
+  // Fetch the post document to get the image URL
+  DocumentSnapshot postDoc = await FirebaseFirestore.instance.collection('User Posts').doc(postId).get();
+  
+  // Cast the data to a Map<String, dynamic>
+  Map<String, dynamic> postData = postDoc.data() as Map<String, dynamic>;
+  
+  // Get the image URL from the post document
+  String? imageUrl = postData['ImageURL']; // This will return null if the field doesn't exist
+
+  // Delete the image from Firebase Storage if it exists
+  if (imageUrl != null) {
+    Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+    await storageRef.delete().then((_) {
+      // If the image is deleted successfully, proceed to delete the post
+      FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
+      Fluttertoast.showToast(msg: "Post and associated image deleted successfully.");
+    }).catchError((error) {
+      // Handle errors if any occur during the image deletion
+      Fluttertoast.showToast(msg: "Failed to delete image: $error");
+    });
+  } else {
+    // If there's no image URL, just delete the post
+    await FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
     Fluttertoast.showToast(msg: "Post deleted successfully.");
   }
+}
+
 
   // Function to edit a post
   void editPost(BuildContext context, String postId, String currentMessage) {
@@ -96,6 +121,7 @@ class _CommunityPageState extends State<CommunityPage> {
                         final postId = post.id;
                         final postMessage = post['Message'];
                         final postUserEmail = post['User email'];
+                        final postImageUrl = post.data().containsKey('ImageURL') ? post['ImageURL'] : null; // Check if image URL exists
 
                         return Dismissible(
                           key: Key(postId),
@@ -139,6 +165,7 @@ class _CommunityPageState extends State<CommunityPage> {
                             postId: postId,
                             likes: List<String>.from(post['Likes'] ?? []),
                             time: formatDate(post['TimeStamps']),
+                            imageUrl: postImageUrl, // Add image URL support
                           ),
                         );
                       },

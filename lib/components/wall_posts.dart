@@ -4,6 +4,9 @@ import 'package:community/components/comment_button.dart';
 import 'package:community/components/like_button.dart';
 import 'package:community/helper/helper_method.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_storage/firebase_storage.dart'; // For image storage
+import 'package:image_picker/image_picker.dart'; // For selecting images
+import 'dart:io';
 
 class WallPosts extends StatefulWidget {
   final String message;
@@ -11,6 +14,7 @@ class WallPosts extends StatefulWidget {
   final String time;
   final String postId;
   final List<String> likes;
+  final String? imageUrl; // Add imageUrl to the constructor for image fetching
 
   const WallPosts({
     super.key,
@@ -19,6 +23,7 @@ class WallPosts extends StatefulWidget {
     required this.postId,
     required this.likes,
     required this.time,
+    this.imageUrl, // Optional image URL
   });
 
   @override
@@ -29,6 +34,7 @@ class _WallPostsState extends State<WallPosts> {
   final String currentUserEmail = "madhawaawishka@gmail.com";
   bool isLiked = false;
   final _commentTextController = TextEditingController();
+  File? _imageFile; // To store the selected image
 
   @override
   void initState() {
@@ -45,17 +51,42 @@ class _WallPostsState extends State<WallPosts> {
 
     if (isLiked) {
       postRef.update({
-        'Likes': FieldValue.arrayUnion([
-          currentUserEmail
-        ])
+        'Likes': FieldValue.arrayUnion([currentUserEmail])
       });
     } else {
       postRef.update({
-        'Likes': FieldValue.arrayRemove([
-          currentUserEmail
-        ])
+        'Likes': FieldValue.arrayRemove([currentUserEmail])
       });
     }
+  }
+
+  // Select image from gallery
+  Future<void> _selectImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+      _uploadImage();
+    }
+  }
+
+  // Upload image to Firebase Storage and get the URL
+  Future<void> _uploadImage() async {
+    if (_imageFile == null) return;
+
+    String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
+    Reference storageRef = FirebaseStorage.instance.ref().child('post_images').child(fileName);
+
+    UploadTask uploadTask = storageRef.putFile(_imageFile!);
+    TaskSnapshot snapshot = await uploadTask;
+
+    String downloadUrl = await snapshot.ref.getDownloadURL();
+    
+    // Update the Firestore document with the image URL
+    FirebaseFirestore.instance.collection('User Posts').doc(widget.postId).update({
+      'imageUrl': downloadUrl,
+    });
   }
 
   void addComment(String commentText) {
@@ -98,53 +129,17 @@ class _WallPostsState extends State<WallPosts> {
     );
   }
 
-  void deletePost() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Delete Post"),
-        content: const Text("Are you sure you want to delete this post?"),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Cancel"),
-          ),
-          TextButton(
-            onPressed: () async {
-              try {
-                final commentDocs = await FirebaseFirestore.instance.collection("User Posts").doc(widget.postId).collection("Comments").get();
-
-                for (var doc in commentDocs.docs) {
-                  await FirebaseFirestore.instance.collection("User Posts").doc(widget.postId).collection("Comments").doc(doc.id).delete();
-                }
-
-                await FirebaseFirestore.instance.collection("User Posts").doc(widget.postId).delete();
-
-                print("Post Deleted");
-              } catch (error) {
-                print("Failed to delete the post: $error");
-              }
-
-              Navigator.pop(context);
-            },
-            child: const Text("Delete"),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFFEBF4FB), // White background for better contrast
+        color: const Color(0xFFEBF4FB),
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
             color: Colors.black12,
             blurRadius: 8,
-            offset: const Offset(0, 4), // Soft shadow
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -190,10 +185,18 @@ class _WallPostsState extends State<WallPosts> {
                   ],
                 ),
               ),
-              // Removed the DeleteButton here
+              // Button to select image from gallery,
             ],
           ),
           const SizedBox(height: 20),
+
+          // Show uploaded image if it exists
+          if (widget.imageUrl != null && widget.imageUrl!.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              child: Image.network(widget.imageUrl!),
+            ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
