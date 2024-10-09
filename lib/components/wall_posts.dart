@@ -197,31 +197,48 @@ class _WallPostsState extends State<WallPosts> {
               child: Image.network(widget.imageUrl!),
             ),
 
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              Column(
-                children: [
-                  LikeButton(isLiked: isLiked, onTap: toggleLike),
-                  const SizedBox(height: 5),
-                  Text(
-                    widget.likes.length.toString(),
-                    style: const TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-              Column(
-                children: [
-                  CommentButton(onTap: showCommentDialog),
-                  const SizedBox(height: 5),
-                  const Text(
-                    '0',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            ],
-          ),
+         // Inside the build method
+Row(
+  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+  children: [
+    Column(
+      children: [
+        LikeButton(isLiked: isLiked, onTap: toggleLike),
+        const SizedBox(height: 5),
+        Text(
+          widget.likes.length.toString(),
+          style: const TextStyle(color: Colors.grey),
+        ),
+      ],
+    ),
+    Column(
+      children: [
+        CommentButton(onTap: showCommentDialog),
+        const SizedBox(height: 5),
+        // Replace '0' with a StreamBuilder to get the comment count
+        StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance
+              .collection("User Posts")
+              .doc(widget.postId)
+              .collection("Comments")
+              .snapshots(),
+          builder: (context, snapshot) {
+            if (!snapshot.hasData) {
+              return const Text('0', style: TextStyle(color: Colors.grey));
+            }
+            // Get the number of comments
+            final commentCount = snapshot.data!.docs.length;
+            return Text(
+              commentCount.toString(),
+              style: const TextStyle(color: Colors.grey),
+            );
+          },
+        ),
+      ],
+    ),
+  ],
+),
+
           const SizedBox(height: 20),
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance.collection("User Posts").doc(widget.postId).collection("Comments").orderBy("CommentTime", descending: true).snapshots(),
