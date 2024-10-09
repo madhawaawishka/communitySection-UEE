@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:community/components/comment.dart';
 import 'package:community/components/comment_button.dart';
-import 'package:community/components/delete_button.dart';
 import 'package:community/components/like_button.dart';
 import 'package:community/helper/helper_method.dart';
 import 'package:flutter/material.dart';
@@ -191,7 +190,7 @@ class _WallPostsState extends State<WallPosts> {
                   ],
                 ),
               ),
-              if (widget.user == currentUserEmail) DeleteButton(onTap: deletePost)
+              // Removed the DeleteButton here
             ],
           ),
           const SizedBox(height: 20),
