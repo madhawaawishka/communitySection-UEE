@@ -7,6 +7,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_storage/firebase_storage.dart'; // For image storage
 import 'package:image_picker/image_picker.dart'; // For selecting images
 import 'dart:io';
+import 'package:http/http.dart' as http; // Add this import for API requests
+import 'dart:convert'; // To parse JSON
 
 class WallPosts extends StatefulWidget {
   final String message;
@@ -35,11 +37,30 @@ class _WallPostsState extends State<WallPosts> {
   bool isLiked = false;
   final _commentTextController = TextEditingController();
   File? _imageFile; // To store the selected image
+  String? profileImageUrl; // Store the random profile image URL
 
   @override
   void initState() {
     super.initState();
     isLiked = widget.likes.contains(currentUserEmail);
+    fetchRandomProfileImage(); // Fetch the random profile image when the widget is created
+  }
+
+  // Fetch random profile image from randomuser.me API
+  Future<void> fetchRandomProfileImage() async {
+    try {
+      final response = await http.get(Uri.parse('https://randomuser.me/api/'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          profileImageUrl = data['results'][0]['picture']['thumbnail']; // Get the profile image URL
+        });
+      } else {
+        print('Failed to load random profile image');
+      }
+    } catch (e) {
+      print('Error fetching random profile image: $e');
+    }
   }
 
   void toggleLike() {
@@ -58,35 +79,6 @@ class _WallPostsState extends State<WallPosts> {
         'Likes': FieldValue.arrayRemove([currentUserEmail])
       });
     }
-  }
-
-  // Select image from gallery
-  Future<void> _selectImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _imageFile = File(pickedFile.path);
-      });
-      _uploadImage();
-    }
-  }
-
-  // Upload image to Firebase Storage and get the URL
-  Future<void> _uploadImage() async {
-    if (_imageFile == null) return;
-
-    String fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-    Reference storageRef = FirebaseStorage.instance.ref().child('post_images').child(fileName);
-
-    UploadTask uploadTask = storageRef.putFile(_imageFile!);
-    TaskSnapshot snapshot = await uploadTask;
-
-    String downloadUrl = await snapshot.ref.getDownloadURL();
-    
-    // Update the Firestore document with the image URL
-    FirebaseFirestore.instance.collection('User Posts').doc(widget.postId).update({
-      'imageUrl': downloadUrl,
-    });
   }
 
   void addComment(String commentText) {
@@ -149,9 +141,15 @@ class _WallPostsState extends State<WallPosts> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Display the random profile image near the post
+              if (profileImageUrl != null)
+                CircleAvatar(
+                  backgroundImage: NetworkImage(profileImageUrl!),
+                  radius: 20,
+                ),
+              const SizedBox(width: 10),
               Flexible(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,7 +183,6 @@ class _WallPostsState extends State<WallPosts> {
                   ],
                 ),
               ),
-              // Button to select image from gallery,
             ],
           ),
           const SizedBox(height: 20),
@@ -197,51 +194,52 @@ class _WallPostsState extends State<WallPosts> {
               child: Image.network(widget.imageUrl!),
             ),
 
-         // Inside the build method
-Row(
-  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-  children: [
-    Column(
-      children: [
-        LikeButton(isLiked: isLiked, onTap: toggleLike),
-        const SizedBox(height: 5),
-        Text(
-          widget.likes.length.toString(),
-          style: const TextStyle(color: Colors.grey),
-        ),
-      ],
-    ),
-    Column(
-      children: [
-        CommentButton(onTap: showCommentDialog),
-        const SizedBox(height: 5),
-        // Replace '0' with a StreamBuilder to get the comment count
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection("User Posts")
-              .doc(widget.postId)
-              .collection("Comments")
-              .snapshots(),
-          builder: (context, snapshot) {
-            if (!snapshot.hasData) {
-              return const Text('0', style: TextStyle(color: Colors.grey));
-            }
-            // Get the number of comments
-            final commentCount = snapshot.data!.docs.length;
-            return Text(
-              commentCount.toString(),
-              style: const TextStyle(color: Colors.grey),
-            );
-          },
-        ),
-      ],
-    ),
-  ],
-),
-
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              Column(
+                children: [
+                  LikeButton(isLiked: isLiked, onTap: toggleLike),
+                  const SizedBox(height: 5),
+                  Text(
+                    widget.likes.length.toString(),
+                    style: const TextStyle(color: Colors.grey),
+                  ),
+                ],
+              ),
+              Column(
+                children: [
+                  CommentButton(onTap: showCommentDialog),
+                  const SizedBox(height: 5),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection("User Posts")
+                        .doc(widget.postId)
+                        .collection("Comments")
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Text('0', style: TextStyle(color: Colors.grey));
+                      }
+                      final commentCount = snapshot.data!.docs.length;
+                      return Text(
+                        commentCount.toString(),
+                        style: const TextStyle(color: Colors.grey),
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ],
+          ),
           const SizedBox(height: 20),
           StreamBuilder<QuerySnapshot>(
-            stream: FirebaseFirestore.instance.collection("User Posts").doc(widget.postId).collection("Comments").orderBy("CommentTime", descending: true).snapshots(),
+            stream: FirebaseFirestore.instance
+                .collection("User Posts")
+                .doc(widget.postId)
+                .collection("Comments")
+                .orderBy("CommentTime", descending: true)
+                .snapshots(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
