@@ -68,7 +68,7 @@ class _TestMeState extends State<TestMe> {
 
   Widget slideRightBackground() {
     return Container(
-      color: Colors.blue,
+      color: Colors.blue[800],
       child: Align(
         alignment: Alignment.centerRight,
         child: Row(
@@ -295,7 +295,7 @@ Future<void> editComment(String commentId, String newMessage) async {
     return Scaffold(
       appBar: AppBar(
         title: Text("Comment Page"),
-        backgroundColor: Colors.pink,
+        backgroundColor: Colors.blue,
       ),
       body: Container(
         child: CommentBox(
@@ -307,7 +307,7 @@ Future<void> editComment(String commentId, String newMessage) async {
           sendButtonMethod: postComment,
           formKey: formKey,
           commentController: commentController,
-          backgroundColor: Colors.pink,
+          backgroundColor: Colors.blue[800],
           textColor: Colors.white,
           sendWidget: Icon(Icons.send_sharp, size: 30, color: Colors.white),
         ),
