@@ -3,6 +3,8 @@ import 'package:comment_box/comment/comment.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+
 
 class TestMe extends StatefulWidget {
   @override
@@ -40,7 +42,6 @@ class _TestMeState extends State<TestMe> {
     });
   }
 
-  // This method provides the background when swiping left (for delete)
   Widget slideLeftBackground() {
     return Container(
       color: Colors.red,
@@ -65,7 +66,6 @@ class _TestMeState extends State<TestMe> {
     );
   }
 
-  // This method provides the background when swiping right (for edit)
   Widget slideRightBackground() {
     return Container(
       color: Colors.blue,
@@ -127,28 +127,64 @@ class _TestMeState extends State<TestMe> {
               // Swipe Right to edit
               editCommentController.text = data[index]['message']; // Set the message in the edit controller
               selectedCommentId = data[index]['id']; // Store the comment ID for editing
+              
+              // Show the edit modal
               await showDialog(
                 context: context,
                 builder: (BuildContext context) {
                   return AlertDialog(
-                    title: Text("Edit Comment"),
-                    content: TextFormField(
-                      controller: editCommentController, // Use the edit controller here
-                      decoration: InputDecoration(hintText: "Edit your comment"),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
                     ),
-                    actions: <Widget>[
-                      TextButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        child: Text("Cancel"),
+                    contentPadding: EdgeInsets.only(top: 10.0),
+                    content: SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              "Edit Comment",
+                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            SizedBox(height: 10),
+                            TextFormField(
+                              controller: editCommentController,
+                              maxLines: 3,
+                              decoration: InputDecoration(
+                                hintText: "Edit your comment...",
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+                              ),
+                            ),
+                            SizedBox(height: 10),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                TextButton.icon(
+                                  onPressed: () => Navigator.of(context).pop(),
+                                  icon: Icon(Icons.cancel, color: Colors.red),
+                                  label: Text("Cancel"),
+                                ),
+                                ElevatedButton.icon(
+                                  onPressed: () {
+                                    editComment(selectedCommentId!, editCommentController.text);
+                                    Navigator.of(context).pop();
+                                  },
+                                  icon: Icon(Icons.save),
+                                  label: Text("Save"),
+                                  style: ElevatedButton.styleFrom(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                  ),
+                                ),
+                              ],
+                            )
+                          ],
+                        ),
                       ),
-                      TextButton(
-                        onPressed: () {
-                          editComment(selectedCommentId!, editCommentController.text);
-                          Navigator.of(context).pop();
-                        },
-                        child: Text("Save"),
-                      ),
-                    ],
+                    ),
                   );
                 },
               );
@@ -157,30 +193,44 @@ class _TestMeState extends State<TestMe> {
           },
           child: Padding(
             padding: const EdgeInsets.fromLTRB(2.0, 8.0, 2.0, 0.0),
-            child: ListTile(
-              leading: GestureDetector(
-                onTap: () async {
-                  print("Comment Clicked");
-                },
-                child: Container(
-                  height: 50.0,
-                  width: 50.0,
-                  decoration: BoxDecoration(
-                    color: Colors.blue,
-                    borderRadius: BorderRadius.all(Radius.circular(50)),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    spreadRadius: 3,
+                    blurRadius: 5,
+                    offset: Offset(0, 2), // changes position of shadow
                   ),
-                  child: CircleAvatar(
-                    radius: 50,
-                    backgroundImage: CommentBox.commentImageParser(imageURLorPath: data[index]['pic']),
+                ],
+              ),
+              child: ListTile(
+                leading: GestureDetector(
+                  onTap: () async {
+                    print("Comment Clicked");
+                  },
+                  child: Container(
+                    height: 50.0,
+                    width: 50.0,
+                    decoration: BoxDecoration(
+                      color: Colors.blue,
+                      borderRadius: BorderRadius.all(Radius.circular(50)),
+                    ),
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: CommentBox.commentImageParser(imageURLorPath: data[index]['pic']),
+                    ),
                   ),
                 ),
+                title: Text(
+                  data[index]['name'],
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                subtitle: Text(data[index]['message']),
+                trailing: Text(data[index]['date'], style: TextStyle(fontSize: 10)),
               ),
-              title: Text(
-                data[index]['name'],
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(data[index]['message']),
-              trailing: Text(data[index]['date'], style: TextStyle(fontSize: 10)),
             ),
           ),
         );
@@ -188,46 +238,57 @@ class _TestMeState extends State<TestMe> {
     );
   }
 
+  void showToast(String message) {
+  Fluttertoast.showToast(
+    msg: message,
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.BOTTOM,
+    timeInSecForIosWeb: 1,
+    backgroundColor: Colors.grey[800],
+    textColor: Colors.white,
+    fontSize: 16.0,
+  );
+}
+
+
   Future<void> postComment() async {
-    if (formKey.currentState!.validate()) {
-      // Get the current date and time
-      var now = DateTime.now();
-      var formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
+  if (formKey.currentState!.validate()) {
+    var now = DateTime.now();
+    var formattedDate = DateFormat('yyyy-MM-dd HH:mm:ss').format(now);
 
-      // Add the new comment to Firebase
-      await FirebaseFirestore.instance.collection('Comments').add({
-        'name': 'Madhawa Awishka', // Hardcoded name
-        'pic': 'https://randomuser.me/api/portraits/men/${filedata.length % 100}.jpg', // Placeholder image
-        'message': commentController.text,
-        'date': formattedDate,
-      });
-
-      // Fetch the updated comments after posting
-      fetchComments();
-
-      commentController.clear(); // Clear the new comment controller
-      FocusScope.of(context).unfocus();
-    }
-  }
-
-  Future<void> deleteComment(String commentId) async {
-    // Delete the comment from Firebase
-    await FirebaseFirestore.instance.collection('Comments').doc(commentId).delete();
-
-    // Fetch the updated comments after deletion
-    fetchComments();
-  }
-
-  Future<void> editComment(String commentId, String newMessage) async {
-    // Edit the comment in Firebase
-    await FirebaseFirestore.instance.collection('Comments').doc(commentId).update({
-      'message': newMessage,
-      'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()), // Update timestamp
+    await FirebaseFirestore.instance.collection('Comments').add({
+      'name': 'Madhawa Awishka',
+      'pic': 'https://randomuser.me/api/portraits/men/${filedata.length % 100}.jpg',
+      'message': commentController.text,
+      'date': formattedDate,
     });
 
-    // Fetch the updated comments after editing
     fetchComments();
+    commentController.clear();
+    FocusScope.of(context).unfocus();
+
+    showToast("Comment posted successfully!");
   }
+}
+
+Future<void> deleteComment(String commentId) async {
+  await FirebaseFirestore.instance.collection('Comments').doc(commentId).delete();
+  fetchComments();
+
+  showToast("Comment deleted successfully!");
+}
+
+Future<void> editComment(String commentId, String newMessage) async {
+  await FirebaseFirestore.instance.collection('Comments').doc(commentId).update({
+    'message': newMessage,
+    'date': DateFormat('yyyy-MM-dd HH:mm:ss').format(DateTime.now()),
+  });
+
+  fetchComments();
+
+  showToast("Comment updated successfully!");
+}
+
 
   @override
   Widget build(BuildContext context) {
@@ -238,17 +299,14 @@ class _TestMeState extends State<TestMe> {
       ),
       body: Container(
         child: CommentBox(
-          // userImage: CommentBox.commentImageParser(imageURLorPath: "assets/img/userpic.jpg"),
-          userImage: CommentBox.commentImageParser(
-            imageURLorPath: "lib/assets/user.png", // Path to the user image // Use a placeholder image for now
-          ),
+          userImage: CommentBox.commentImageParser(imageURLorPath: "lib/assets/user.png"),
           child: commentChild(filedata),
           labelText: 'Write a comment...',
           errorText: 'Comment cannot be blank',
           withBorder: false,
-          sendButtonMethod: postComment, // Send comment to Firebase
+          sendButtonMethod: postComment,
           formKey: formKey,
-          commentController: commentController, // Use for new comment
+          commentController: commentController,
           backgroundColor: Colors.pink,
           textColor: Colors.white,
           sendWidget: Icon(Icons.send_sharp, size: 30, color: Colors.white),
