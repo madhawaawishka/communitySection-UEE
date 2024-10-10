@@ -47,38 +47,94 @@ void deletePost(String postId) async {
 
 
   // Function to edit a post
-  void editPost(BuildContext context, String postId, String currentMessage) {
-    TextEditingController editController = TextEditingController(text: currentMessage);
+void editPost(BuildContext context, String postId, String currentMessage) {
+  TextEditingController editController = TextEditingController(text: currentMessage);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text("Edit Post"),
-          content: TextField(
-            controller: editController,
-            maxLines: 5,
-            decoration: const InputDecoration(
-              hintText: "Edit your post",
-              border: OutlineInputBorder(),
-            ),
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text(
+          "Edit Post",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
-          actions: [
-            ElevatedButton(
-              onPressed: () {
-                FirebaseFirestore.instance.collection('User Posts').doc(postId).update({
-                  'Message': editController.text
-                });
-                Navigator.pop(context);
-                Fluttertoast.showToast(msg: "Post updated successfully.");
-              },
-              child: const Text("Save"),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            TextField(
+              controller: editController,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: "Update your post...",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Cancel Button
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                // Save Button
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (editController.text.trim().isNotEmpty) {
+                      FirebaseFirestore.instance.collection('User Posts').doc(postId).update({
+                        'Message': editController.text,
+                      });
+                      Navigator.pop(context);
+                      Fluttertoast.showToast(msg: "Post updated successfully.");
+                    } else {
+                      Fluttertoast.showToast(msg: "Post cannot be empty.");
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
             ),
           ],
-        );
-      },
-    );
-  }
+        ),
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
