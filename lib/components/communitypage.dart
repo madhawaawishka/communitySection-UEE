@@ -141,7 +141,7 @@ void editPost(BuildContext context, String postId, String currentMessage) {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Explore Communitiesssss",
+          "Explore Communities",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
