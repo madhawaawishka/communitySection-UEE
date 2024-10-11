@@ -17,122 +17,124 @@ class _CommunityPageState extends State<CommunityPage> {
   final String currentUserEmail = "madhawaawishka@gmail.com"; // Hardcoded user email
 
   // Function to delete a post
-  void deletePost(String postId) async {
-    // Fetch the post document to get the image URL
-    DocumentSnapshot postDoc = await FirebaseFirestore.instance.collection('User Posts').doc(postId).get();
+void deletePost(String postId) async {
+  // Fetch the post document to get the image URL
+  DocumentSnapshot postDoc = await FirebaseFirestore.instance.collection('User Posts').doc(postId).get();
+  
+  // Cast the data to a Map<String, dynamic>
+  Map<String, dynamic> postData = postDoc.data() as Map<String, dynamic>;
+  
+  // Get the image URL from the post document
+  String? imageUrl = postData['ImageURL']; // This will return null if the field doesn't exist
 
-    // Cast the data to a Map<String, dynamic>
-    Map<String, dynamic> postData = postDoc.data() as Map<String, dynamic>;
-
-    // Get the image URL from the post document
-    String? imageUrl = postData['ImageURL']; // This will return null if the field doesn't exist
-
-    // Delete the image from Firebase Storage if it exists
-    if (imageUrl != null) {
-      Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
-      await storageRef.delete().then((_) {
-        // If the image is deleted successfully, proceed to delete the post
-        FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
-        Fluttertoast.showToast(msg: "Post and associated image deleted successfully.");
-      }).catchError((error) {
-        // Handle errors if any occur during the image deletion
-        Fluttertoast.showToast(msg: "Failed to delete image: $error");
-      });
-    } else {
-      // If there's no image URL, just delete the post
-      await FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
-      Fluttertoast.showToast(msg: "Post deleted successfully.");
-    }
+  // Delete the image from Firebase Storage if it exists
+  if (imageUrl != null) {
+    Reference storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+    await storageRef.delete().then((_) {
+      // If the image is deleted successfully, proceed to delete the post
+      FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
+      Fluttertoast.showToast(msg: "Post and associated image deleted successfully.");
+    }).catchError((error) {
+      // Handle errors if any occur during the image deletion
+      Fluttertoast.showToast(msg: "Failed to delete image: $error");
+    });
+  } else {
+    // If there's no image URL, just delete the post
+    await FirebaseFirestore.instance.collection('User Posts').doc(postId).delete();
+    Fluttertoast.showToast(msg: "Post deleted successfully.");
   }
+}
+
 
   // Function to edit a post
-  void editPost(BuildContext context, String postId, String currentMessage) {
-    TextEditingController editController = TextEditingController(text: currentMessage);
+void editPost(BuildContext context, String postId, String currentMessage) {
+  TextEditingController editController = TextEditingController(text: currentMessage);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+        ),
+        title: const Text(
+          "Edit Post",
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
           ),
-          title: const Text(
-            "Edit Post",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 20,
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const SizedBox(height: 10),
-              TextField(
-                controller: editController,
-                maxLines: 5,
-                decoration: InputDecoration(
-                  hintText: "Update your post...",
-                  filled: true,
-                  fillColor: Colors.grey[100],
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
-                  ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const SizedBox(height: 10),
+            TextField(
+              controller: editController,
+              maxLines: 5,
+              decoration: InputDecoration(
+                hintText: "Update your post...",
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Cancel Button
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey[300],
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
+            ),
+            const SizedBox(height: 20),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Cancel Button
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[300],
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                    onPressed: () {
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Cancel",
+                    style: TextStyle(
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+                // Save Button
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: () {
+                    if (editController.text.trim().isNotEmpty) {
+                      FirebaseFirestore.instance.collection('User Posts').doc(postId).update({
+                        'Message': editController.text,
+                      });
                       Navigator.pop(context);
-                    },
-                    child: const Text(
-                      "Cancel",
-                      style: TextStyle(
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                  // Save Button
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blueAccent,
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    onPressed: () {
-                      if (editController.text.trim().isNotEmpty) {
-                        FirebaseFirestore.instance.collection('User Posts').doc(postId).update({
-                          'Message': editController.text,
-                        });
-                        Navigator.pop(context);
-                        Fluttertoast.showToast(msg: "Post updated successfully.");
-                      } else {
-                        Fluttertoast.showToast(msg: "Post cannot be empty.");
-                      }
-                    },
-                    child: const Text("Save"),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+                      Fluttertoast.showToast(msg: "Post updated successfully.");
+                    } else {
+                      Fluttertoast.showToast(msg: "Post cannot be empty.");
+                    }
+                  },
+                  child: const Text("Save"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
