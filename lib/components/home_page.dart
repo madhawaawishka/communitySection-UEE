@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:community/components/commentBox.dart';
 import 'package:community/components/communitypage.dart';
 
-class HomePage extends StatelessWidget {
-  const HomePage({super.key});
+class HomePage1 extends StatelessWidget {
+  const HomePage1({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +90,7 @@ class HomePage extends StatelessWidget {
 
 void main() {
   runApp(MaterialApp(
-    home: HomePage(),
+    home: HomePage1(),
     theme: ThemeData(
       primaryColor: Colors.deepPurple,
       scaffoldBackgroundColor: Colors.grey[100],
