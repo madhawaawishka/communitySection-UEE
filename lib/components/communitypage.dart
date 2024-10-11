@@ -139,7 +139,7 @@ class _CommunityPageState extends State<CommunityPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          "Explore Communitiesfdffdfdfdffdssgfgfgfgfgfgfggfgfgffgss",
+          "Explore Communitiesfdffdfdfdffdssgfgfgfgfgfgfgfgss",
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.bold,
